@@ -1,17 +1,7 @@
-===============================
-Tachyonic Project Psychokinetic
-===============================
-
-Quick links
------------
-
-* `Website <http://www.tachyonic.org/>`__.
-* `Documentation <http://www.tachyonic.org/sphinx/psychokinetic>`__.
-
 Installation
-------------
+============
 
-Tachyonic Project Psychokinetic currently fully supports `CPython <https://www.python.org/downloads/>`__ 3.6.
+Tachyonic Project psychokinetic currently fully supports `CPython <https://www.python.org/downloads/>`__ 3.6.
 
 
 CPython
@@ -40,7 +30,7 @@ the cythonized psychokinetic framework with the system's default C compiler.
 Source Code
 -----------
 
-Tachyonic Project Psychokinetic infrastructure and code is hosted on `GitHub <https://github.com/TachyonicProject/psychokinetic>`_.
+Tachyonic Project psychokinetic infrastructure and code is hosted on `GitHub <https://github.com/TachyonicProject/psychokinetic>`_.
 Making the code easy to browse, download, fork, etc. Pull requests are always
 welcome!
 
