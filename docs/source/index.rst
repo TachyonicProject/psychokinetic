@@ -1,5 +1,5 @@
-psychokinetic
-=============
+Welcome to psychokinetic documentation!
+=======================================
 
 Release v\ |version| (:ref:`Installation <install>`)
 
@@ -19,7 +19,6 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
-   index
    license
    install
 
