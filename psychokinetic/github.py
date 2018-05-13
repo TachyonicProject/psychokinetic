@@ -46,6 +46,9 @@ def parse_repo(github_repo):
 
 
 class GitHub(Client):
+    def __init__(self, auth=None):
+        super().__init__('https://api.github.com', auth=auth)
+
     def repos(self, user):
         github_repos = self.execute('GET', '/users/%s/repos' % user).json
         repos = []
@@ -73,6 +76,13 @@ class GitHub(Client):
         for github_branch in github_branches:
             branches.append(github_branch['name'])
         return branches
+
+    def teams(self, user):
+        headers = {'accept': 'application/vnd.github.inertia-preview+json'}
+        github_teams = self.execute('GET',
+                                    '/orgs/%s/teams' %
+                                    user, headers=headers).json
+        return github_teams
 
     def _events(self, user, repo):
         found_events = []
