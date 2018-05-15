@@ -27,74 +27,67 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-from luxon.utils.http import Client
-from luxon.utils.timezone import utc
-
-
-def parse_repo(github_repo):
-    repo = {}
-    repo['name'] = github_repo['name']
-    repo['description'] = github_repo['description']
-    repo['clone_url'] = github_repo['clone_url']
-    repo['git_url'] = github_repo['git_url']
-    repo['ssh_url'] = github_repo['ssh_url']
-    repo['html_url'] = github_repo['html_url']
-    repo['created_at'] = utc(github_repo['created_at'])
-    repo['updated_at'] = utc(github_repo['updated_at'])
-    repo['pushed_at'] = utc(github_repo['pushed_at'])
-    return repo
+from luxon.utils.http import Client, parse_link_header
 
 
 class GitHub(Client):
     def __init__(self, auth=None):
         super().__init__('https://api.github.com', auth=auth)
 
+    def execute(self, method, url, headers={}):
+        headers = headers.copy()
+        response = super().execute(method, url, headers=headers)
+        if isinstance(response.json, list):
+            responses = [] + response.json
+            links = parse_link_header(response.headers.get('link'))
+            if links.next is not None:
+                responses += super().execute('GET',
+                                             (links.next[0]['link'])).json
+
+            return responses
+
+        return response.json
+
     def repos(self, user):
-        github_repos = self.execute('GET', '/users/%s/repos' % user).json
+        github_repos = self.execute('GET', '/users/%s/repos' % user)
         repos = []
         for github_repo in github_repos:
-            repos.append(parse_repo(github_repo))
+            repos.append(github_repo)
         return repos
 
     def repo(self, user, repo):
-        github_repo = self.execute('GET', '/repos/%s/%s' % (user, repo,)).json
-        return parse_repo(github_repo)
+        github_repo = self.execute('GET', '/repos/%s/%s' % (user, repo,))
+        return github_repo
 
     def tags(self, user, repo):
         github_tags = self.execute('GET',
-                                   '/repos/%s/%s/tags' % (user, repo,)).json
-        tags = []
-        for github_tag in github_tags:
-            tags.append(github_tag['name'])
-        return tags
+                                   '/repos/%s/%s/tags' % (user, repo,))
+        return github_tags
 
     def branches(self, user, repo):
         github_branches = self.execute('GET',
                                        '/repos/%s/%s/branches' %
-                                       (user, repo,)).json
-        branches = []
-        for github_branch in github_branches:
-            branches.append(github_branch['name'])
-        return branches
+                                       (user, repo,))
+        return github_branches
 
     def teams(self, user):
         headers = {'accept': 'application/vnd.github.inertia-preview+json'}
         github_teams = self.execute('GET',
                                     '/orgs/%s/teams' %
-                                    user, headers=headers).json
+                                    user, headers=headers)
         return github_teams
 
     def team_members(self, team_id):
         headers = {'accept': 'application/vnd.github.inertia-preview+json'}
         github_teams = self.execute('GET',
                                     '/teams/%s/members' %
-                                    team_id, headers=headers).json
+                                    team_id, headers=headers)
         return github_teams
 
     def _events(self, user, repo):
         found_events = []
         github_events = self.execute('GET', '/repos/%s/%s/events' %
-                                     (user, repo,)).json
+                                     (user, repo,))
         for github_event in github_events:
             found_events.append(github_event)
 
@@ -116,7 +109,7 @@ class GitHub(Client):
         projects = {}
         headers = {'accept': 'application/vnd.github.inertia-preview+json'}
         github_projects = self.execute('GET', '/orgs/%s/projects' % user,
-                                       headers=headers).json
+                                       headers=headers)
         for github_project in github_projects:
             id = github_project['id']
             name = github_project['name']
@@ -131,7 +124,7 @@ class GitHub(Client):
             if state == 'open':
                 github_columns = self.execute('GET',
                                               '/projects/%s/columns' % id,
-                                              headers=headers).json
+                                              headers=headers)
                 for github_column in github_columns:
                     column = {}
                     projects[id]['columns'].append(column)
@@ -144,7 +137,7 @@ class GitHub(Client):
                     github_cards = self.execute('GET',
                                                 'projects/columns/%s/cards' %
                                                 column_id,
-                                                headers=headers).json
+                                                headers=headers)
                     for github_card in github_cards:
                         card = {}
                         column['cards'].append(card)
@@ -157,7 +150,7 @@ class GitHub(Client):
                                 'GET',
                                 content_url,
                                 headers=headers
-                            ).json
+                            )
                             title = github_card_content['title']
                             card['title'] = title
                             body = github_card_content['body']
