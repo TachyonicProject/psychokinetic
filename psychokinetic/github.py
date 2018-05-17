@@ -84,6 +84,13 @@ class GitHub(Client):
                                     team_id, headers=headers)
         return github_teams
 
+    def user(self, username):
+        headers = {'accept': 'application/vnd.github.inertia-preview+json'}
+        github_teams = self.execute('GET',
+                                    '/users/%s' %
+                                    username, headers=headers)
+        return github_teams
+
     def _events(self, user, repo):
         found_events = []
         github_events = self.execute('GET', '/repos/%s/%s/events' %
