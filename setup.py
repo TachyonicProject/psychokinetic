@@ -281,11 +281,6 @@ setup_dict = dict(
     cmdclass=cmdclass,
     ext_modules=ext_modules,
     zip_safe=False,  # don't use eggs
-    # entry_points={
-    #    'console_scripts': [
-    #        'luxon = psychokinetic.main:entry_point'
-    #    ],
-    # }
 )
 
 
