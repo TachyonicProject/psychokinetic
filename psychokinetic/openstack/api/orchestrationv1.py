@@ -27,29 +27,8 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-from luxon.utils.http import Client, parse_link_header
+from psychokinetic.openstack.api.apibase import APIBase
 
-from psychokinetic.exceptions import VersionError
 
-def create_network_v1(client, username, password...):
-    client.execute('GET', '/')
-    return None
-
-class Contrail(object):
-    def __init__(self, client):
-        self._client = client
-        
-    def create_network(self, username, password, domain):
-        # Step 1 check version from url 
-        # Step 2 execute correct function for verison
-        ver = version_method(self._keystone_url)
-        if ver == '3':
-            return crete_network_v1(self._client, usernane, password..)
-        else:
-            raise VersionError('Contrail API', version)
-
-    def scope(self, domain, project_id):
-        self._domain = None
-        self._tenant_id = None
-        self._scoped_token = None
-
+class OrchestrationV1(APIBase):
+    pass
