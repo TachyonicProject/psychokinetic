@@ -31,3 +31,4 @@
 from psychokinetic.openstack.api.contrail4 import Contrail4
 
 class Contrail5(Contrail4):
+    pass
