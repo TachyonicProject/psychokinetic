@@ -28,7 +28,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 from luxon.utils.http import Client as HTTPClient
-from luxon.utils.cache import memoize
 
 class Client(HTTPClient):
     """Tachyonic RestApi Client.
@@ -56,14 +55,13 @@ class Client(HTTPClient):
         cert (str/tuple): if String, path to ssl client cert file (.pem). If
             Tuple, ('cert', 'key') pair.
     """
-    @memoize(120)
     def collect_endpoints(self):
         response = self.execute('GET', '/v1/endpoints')
         for endpoint in response.json:
             self.endpoints.set(endpoint['name'], endpoint['interface'],
                                endpoint['region'], endpoint['uri'])
 
-    def authenticate(self, username, password, domain='default'):
+    def password(self, username, password, domain='default'):
         """Authenticate using credentials.
 
         Once authenticated execute will be processed using the context
@@ -78,20 +76,23 @@ class Client(HTTPClient):
         """
         auth_url = "/v1/token"
 
-        if 'X-Tenant-Id' in self.headers:
-            del self.headers['X-Tenant-Id']
-        if 'X-Auth-Token' in self.headers:
-            del self.headers['X-Auth-Token']
+        if 'X-Tenant-Id' in self:
+            del self['X-Tenant-Id']
+        if 'X-Auth-Token' in self:
+            del self['X-Auth-Token']
 
-        data = {}
-        data['username'] = username
-        data['password'] = password
-        data['domain'] = domain
+        data = {
+            "username": username,
+            "domain": domain,
+            "credentials": {
+                "password": password
+            }
+        }
 
-        response = self.execute("POST", auth_url, data)
+        response = self.execute("POST", auth_url, data=data)
 
         if 'token' in response.json:
-            self.headers['X-Auth-Token'] = response.json['token']
+            self['X-Auth-Token'] = response.json['token']
             self.auth_token = response.json['token']
 
         return response
