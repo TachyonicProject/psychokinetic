@@ -29,6 +29,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 from luxon.utils.http import Client as HTTPClient
 
+
 class Client(HTTPClient):
     """Tachyonic RestApi Client.
 
@@ -202,5 +203,5 @@ class Client(HTTPClient):
     def user_domains(self):
         return self.execute('GET', '/v1/domains')
 
-    def user_tenants(self):
-        return self.execute('GET', '/v1/tenants')
+    def user_tenants(self, **kwargs):
+        return self.execute('GET', '/v1/tenants', params=kwargs)
