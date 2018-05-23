@@ -34,15 +34,16 @@ class GitHub(Client):
     def __init__(self, auth=None):
         super().__init__('https://api.github.com', auth=auth)
 
-    def execute(self, method, url, headers={}):
+    def execute(self, method, url, headers={}, **kwargs):
         headers = headers.copy()
-        response = super().execute(method, url, headers=headers)
+        response = super().execute(method, url, headers=headers, params=kwargs)
         if isinstance(response.json, list):
             responses = [] + response.json
             links = parse_link_header(response.headers.get('link'))
             if links.next is not None:
                 responses += super().execute('GET',
-                                             (links.next[0]['link'])).json
+                                             links.next[0]['link'],
+                                             params=kwargs).json
 
             return responses
 
@@ -111,6 +112,10 @@ class GitHub(Client):
             found_events = self._events(user, repo)
 
         return found_events
+
+    def commits(self, user, repo, **kwargs):
+        return self.execute('GET', '/repos/%s/%s/commits' % (user,
+                            repo, ), **kwargs)
 
     def projects(self, user):
         projects = {}
