@@ -197,9 +197,6 @@ def sql_list(req, table, fields, limit=None, **kwargs):
     with db() as conn:
         if (conn.has_field(table, 'domain') and
                 req.context_domain is not None):
-            from luxom import GetLogger
-            log = GetLogger()
-            log.critical('boom')
             context_query['domain'] = req.context_domain
 
         if (conn.has_field(table, 'tenant_id') and
@@ -207,7 +204,8 @@ def sql_list(req, table, fields, limit=None, **kwargs):
             context_query['tenant_id'] = req.context_tenant_id
 
         where, values = build_where(**context_query)
-        search_where, search_values = build_like(**search_query)
+        search_where, search_values = build_like(**search_query,
+                                                 operator='OR')
 
         # Step 5 we get the total_rows
         sql = 'SELECT count(id) as total FROM %s' % table
