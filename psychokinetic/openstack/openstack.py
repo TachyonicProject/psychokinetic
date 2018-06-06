@@ -54,7 +54,7 @@ class Openstack(Client):
         # However we need a copy, since when using the identity.scope method
         # will change the header to the scoped token. If the user wishes to
         # use the 'scope' or 'unscope' method again on identity it will need
-        # the orignal unscoped token.
+        # the original unscoped token.
         self._login_token = None
 
         # To keep track important dont remove... if user wishes to know current
@@ -69,6 +69,7 @@ class Openstack(Client):
         self._user_endpoints = {}
         # WE have to fill below ones anyways.
         self._admin_endpoints = {}
+        self._public_endpoints = {}
 
         # The following interfadce, region is used to by identity.authenticate
         # to determine the endpoints that are stored above in
