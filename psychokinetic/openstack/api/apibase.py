@@ -40,14 +40,18 @@ class APIBase(object):
 
     @property
     def url(self):
-        if self._type in self.user_endpoints:
-            self.url = self._user_endpoints[self._type]
+        if self._type in self._client._user_endpoints:
+            return self._client._user_endpoints[self._type]
         else:
             raise ValueError("No '%s' endpoint found" % self._type)
 
     @property
     def admin(self):
-        if self._type in self.admin_endpoints:
-            self._admin = self._admin_endpoints[self._type]
+        if self._type in self._client._admin_endpoints:
+            return self._client._admin_endpoints[self._type]
         else:
             raise ValueError("No '%s' admin endpoint found" % self._type)
+
+    def execute(self, method, uri, **kwargs):
+        uri = self.url + '/' + uri
+        return self.client.execute(method, uri, **kwargs)

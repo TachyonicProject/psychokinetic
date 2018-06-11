@@ -27,45 +27,95 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+import json
+
 from psychokinetic.openstack.api.apibase import APIBase
+from luxon.exceptions import FieldMissing
 
 
 class IdentityV3(APIBase):
+
     def authenticate(self, username, password, domain):
-        # token = self.execute('POST', self.client.keystone_url)
-        # endpoints = self.execute('GET', self.client.keystone_url)
-        # self.client.login_token = token?
-        # self.client['X-Auth-Token'] = token?
-        # self.clients.user_endpoints = build endpoints based on client.region
-        # & client.interface
-        # However we will need all the admin endpoints too. Put them in
-        # client.admin_endpoints... it needs to be there irrelevant of what
-        # user selected.
-        pass
+        _token_url = self.client.keystone_url.rstrip('/') + '/auth/tokens'
+        _password = {
+            'user': {'name': username, 'domain': {'name': domain},
+                     'password': password}}
+        _identity = {'methods': ['password'], 'password': _password}
+        _auth = {'identity': _identity}
+        _login = json.dumps({'auth': _auth})
 
-    def scope(self, domain, project_id):
-        # We have todo the same again process some endpoints might not be
-        # availible for the scoped token.
+        _response = self.client.execute('POST', _token_url, data=_login)
 
-        # token = self.execute('POST', self.client.keystone_url)
-        # endpoints = self.execute('GET', self.client.keystone_url)
-        # self.client.scoped_token = token?
-        # self.client['X-Auth-Token'] = scoped_token?
-        # self.clients.user_endpoints = build endpoints bbased on client.region &
-        # client.interface
-        # However we will need all the admin endpoints too. Put them in
-        # client.admin_endpoints... it needs to be there irrelevant of what user
-        # selected.
+        self.client._login_token = self.client['X-Auth-Token'] = \
+        _response.headers['x-subject-token']
 
-        # Now when scoping we also set the project_id and domain globally JUST
-        # FOR HEADERS
-        #self.client['project_id_header'] = project_id
-        #self.client['domain_header'] = domain
-        pass
+
+    def scope(self, domain=None, project_id=None, project_name=None):
+        """Changes scope on Openstack Identity
+
+        Args:
+            Either specify the project ID or Name. Domain is only required
+            in the case of Project Name, domain is not required for Project
+            ID.
+
+        """
+        _token_url = self.client.keystone_url.rstrip('/') + '/auth/tokens'
+        _identity = {'methods': ['token'],
+                     'token': {'id': self.client._login_token}}
+        _project = {}
+
+        if domain:
+            _project['domain'] = {'name': domain}
+            self.client['domain_header'] = domain
+        if project_id:
+             _project['id'] = project_id
+        elif project_name:
+            if not domain:
+                raise FieldMissing('domain', 'domain',
+                                   'Scoping requires domain with Project Name')
+            _project['name'] = project_name
+
+        else:
+            raise FieldMissing('project_id or project_name', 'Project',
+                               'Scoping requires either Project ID or Name')
+
+        _scope = {'project': _project}
+        _auth = {'identity': _identity, 'scope': _scope}
+        _login = json.dumps({'auth': _auth})
+
+        _response = self.client.execute('POST', _token_url, data=_login)
+
+        _catalog = _response.json['token']['catalog']
+        self.client._scoped_token = self.client['X-Auth-Token'] = \
+            _response.headers['x-subject-token']
+        self.client['project_id_header'] = _response.json['token']['project'][
+            'id']
+
+        for c in _catalog:
+            for e in c['endpoints']:
+                if e['region'] == self.client.region:
+                    if e['interface'] == 'internal':
+                        self.client._user_endpoints[c['type']] = e['url']
+                    elif e['interface'] == 'public':
+                        self.client._public_endpoints[c['type']] = e['url']
+                    elif e['interface'] == 'admin':
+                        self.client._admin_endpoints[c['type']] = e['url']
+
 
     def unscope(self):
-        # Unscope everything and go back to when we just had authenticate.
-        # Remember to delete the headers.
-        # This might be an issue with the HTTP Client in luxon. let me know I
-        # can fix.
-        pass
+        """Unscope everything and go back to when we just had unscoped
+        authentication.
+        """
+        self.client['X-Auth-Token'] = self.client._login_token
+        self.client._scoped_token = None
+        self.client._user_endpoints = {}
+        self.client._public_endpoints = {}
+        self.client._admin_endpoints = {}
+        try:
+            del self.client['project_id_header']
+        except:
+            pass
+        try:
+            del self.client['domain_header']
+        except:
+            pass
