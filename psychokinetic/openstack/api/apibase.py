@@ -51,3 +51,7 @@ class APIBase(object):
             return self._client._admin_endpoints[self._type]
         else:
             raise ValueError("No '%s' admin endpoint found" % self._type)
+
+    def execute(self, method, uri, **kwargs):
+        uri = self.url + '/' + uri
+        return self.client.execute(method, uri, **kwargs)
