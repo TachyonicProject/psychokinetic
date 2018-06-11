@@ -116,11 +116,11 @@ class Client(HTTPClient):
         response = self.execute("GET", auth_url)
 
         if 'token' in response.json:
-            self.headers['X-Auth-Token'] = response.json['token']
+            self['X-Auth-Token'] = response.json['token']
         if 'tenant_id' in response.json:
-            self.headers['X-Tenant-Id'] = response.json['tenant_id']
+            self['X-Tenant-Id'] = response.json['tenant_id']
         if 'domain' in response.json:
-            self.headers['X-Domain'] = response.json['domain']
+            self['X-Domain'] = response.json['domain']
 
         return response
 
@@ -129,24 +129,24 @@ class Client(HTTPClient):
         """
         auth_url = "/v1/token"
 
-        self.headers['X-Domain'] = domain
+        self['X-Domain'] = domain
         if tenant_id is not None:
-            self.headers['X-Tenant-Id'] = tenant_id
-        elif 'X-Tenant-Id' in self.headers:
-            del self.headers['X-Tenant-Id']
+            self['X-Tenant-Id'] = tenant_id
+        elif 'X-Tenant-Id' in self:
+            del self['X-Tenant-Id']
 
         scope = {}
         scope['domain'] = domain
         scope['tenant_id'] = tenant_id
 
-        response = self.execute("PATCH", auth_url, scope)
+        response = self.execute("PATCH", auth_url, data=scope)
 
         if 'token' in response.json:
-            self.headers['X-Auth-Token'] = response.json['token']
+            self['X-Auth-Token'] = response.json['token']
         if 'tenant_id' in response.json:
-            self.headers['X-Tenant-Id'] = response.json['tenant_id']
+            self['X-Tenant-Id'] = response.json['tenant_id']
         if 'domain' in response.json:
-            self.headers['X-Domain'] = response.json['domain']
+            self['X-Domain'] = response.json['domain']
 
         return response
 
@@ -160,16 +160,16 @@ class Client(HTTPClient):
 
         if auth_token is not None:
             self.auth_token = auth_token
-            self.headers['X-Auth-Token'] = self.auth_token
+            self['X-Auth-Token'] = self.auth_token
 
         if scope_token is not None:
-            self.headers['X-Auth-Token'] = scope_token
+            self['X-Auth-Token'] = scope_token
 
         if domain is not None:
-            self.headers['X-Domain'] = domain
+            self['X-Domain'] = domain
 
         if tenant_id is not None:
-            self.headers['X-Tenant-Id'] = tenant_id
+            self['X-Tenant-Id'] = tenant_id
 
         if region is not None:
             self.region = region
@@ -180,11 +180,11 @@ class Client(HTTPClient):
     def unscope(self):
         """Unscope Token.
         """
-        self.headers['X-Auth-Token'] = self.auth_token
-        if 'X-Domain' in self.headers:
-            del self.headers['X-Domain']
-        if 'X-Tenant-Id' in self.headers:
-            del self.headers['X-Tenant-Id']
+        self['X-Auth-Token'] = self.auth_token
+        if 'X-Domain' in self:
+            del self['X-Domain']
+        if 'X-Tenant-Id' in self:
+            del self['X-Tenant-Id']
 
     def new_endpoint(self, name, interface, region, uri):
         req = {}
