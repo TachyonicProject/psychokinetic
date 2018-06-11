@@ -38,6 +38,18 @@ from psychokinetic.openstack.api.contrail4 import Contrail4
 
 
 class Openstack(Client):
+    """Restclient to use on Openstack Implementation.
+
+    Log in and change scope with with Keystone, then execute on the chosen
+    Service.
+
+    Example usage:
+        os = Openstack(keystone_url='http://example:5000/v3', region="RegionOne")
+        os.identity.authenticate('admin','password','default')
+        os.identity.scope(project_name="Customer1", domain="default")
+        projects = os.identity.execute('GET','tenants').json
+
+    """
     def __init__(self, keystone_url,
                  contrail_url=None,
                  region='RegionOne',
