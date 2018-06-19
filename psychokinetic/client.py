@@ -56,11 +56,13 @@ class Client(HTTPClient):
         cert (str/tuple): if String, path to ssl client cert file (.pem). If
             Tuple, ('cert', 'key') pair.
     """
-    def collect_endpoints(self):
+
+    def collect_endpoints(self, region="Region1", interface='public'):
         response = self.execute('GET', '/v1/endpoints')
-        for endpoint in response.json:
-            self.endpoints.set(endpoint['name'], endpoint['interface'],
-                               endpoint['region'], endpoint['uri'])
+        for endpoint in response.json['payload']:
+            if endpoint['interface'] == interface and endpoint[
+                'region'] == region:
+                    self.endpoints[endpoint['name']] = endpoint['uri']
 
     def password(self, username, password, domain='default'):
         """Authenticate using credentials.
