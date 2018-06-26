@@ -56,13 +56,19 @@ class Client(HTTPClient):
         cert (str/tuple): if String, path to ssl client cert file (.pem). If
             Tuple, ('cert', 'key') pair.
     """
+    def __init__(self, url=None, timeout=(2, 8),
+                 auth=None, verify=True,
+                 cert=None):
+        super().__init__(url, timeout, auth, verify, cert)
+        self.regions = set([])
 
     def collect_endpoints(self, region="Region1", interface='public'):
         response = self.execute('GET', '/v1/endpoints')
         for endpoint in response.json['payload']:
-            if endpoint['interface'] == interface and endpoint[
-                'region'] == region:
-                    self.endpoints[endpoint['name']] = endpoint['uri']
+            self.regions.add(endpoint['region'])
+            if (endpoint['interface'] == interface and
+                    endpoint['region'] == region):
+                self.endpoints[endpoint['name']] = endpoint['uri']
 
     def password(self, username, password, domain='default'):
         """Authenticate using credentials.
@@ -152,13 +158,12 @@ class Client(HTTPClient):
 
         return response
 
-    def set_context(self, auth_token, scope_token, domain, tenant_id, region,
-                    interface):
+    def set_context(self, auth_token, scope_token, domain, tenant_id):
 
-        if 'X-Domain' in self.headers:
-            del self.headers['X-Domain']
-        if 'X-Tenant-Id' in self.headers:
-            del self.headers['X-Tenant-Id']
+        if 'X-Domain' in self:
+            del self['X-Domain']
+        if 'X-Tenant-Id' in self:
+            del self['X-Tenant-Id']
 
         if auth_token is not None:
             self.auth_token = auth_token
@@ -172,12 +177,6 @@ class Client(HTTPClient):
 
         if tenant_id is not None:
             self['X-Tenant-Id'] = tenant_id
-
-        if region is not None:
-            self.region = region
-
-        if interface is not None:
-            self.interface = interface
 
     def unscope(self):
         """Unscope Token.
