@@ -258,27 +258,35 @@ def sql_list(req, table, fields, limit=None, **kwargs):
 
 def obj(req, ModelClass, sql_id=None, hide=None):
     model = ModelClass(hide=hide)
+    fields = ModelClass.fields
     if issubclass(ModelClass, SQLModel) and sql_id:
         model.sql_id(sql_id)
 
-    fields = ModelClass.fields
-    if ('domain' in fields and
-            req.credentials.domain and
-            req.credentials.domain != model['domain']):
-        raise AccessDeniedError('object not in context domain')
-    if ('tenant_id' in fields and
-            req.credentials.tenant_id and
-            req.credentials.tenant_id != model['tenant_id']):
-        raise AccessDeniedError('object not in context tenant')
+        if ('domain' in fields and
+                req.credentials.domain and
+                req.credentials.domain != model['domain']):
+            raise AccessDeniedError('object not in context domain')
+        if ('tenant_id' in fields and
+                req.credentials.tenant_id and
+                req.credentials.tenant_id != model['tenant_id']):
+            raise AccessDeniedError('object not in context tenant')
 
     if req.method in ['POST', 'PATCH', 'PUT']:
         create = req.json.copy()
         if ('domain' in fields):
-            if req.credentials.domain:
+            domain_header = req.get_header('X-Domain')
+            if req.credentials.domain == domain_header:
                 create.update({"domain": req.credentials.domain})
+            else:
+                raise AccessDeniedError(
+                    "Token not scoped for domain '%s'" % domain_header)
         if ('tenant_id' in fields):
-            if req.credentials.tenant_id:
+            tenant_header = req.get_header('X-Tenant-Id')
+            if req.credentials.tenant_id == tenant_header:
                 create.update({"tenant_id": req.credentials.tenant_id})
+            else:
+                raise AccessDeniedError(
+                    "Token not scoped for Tenant '%s'" % tenant_header)
         model.update(create)
     elif (req.method == 'DELETE' and
             issubclass(ModelClass, SQLModel) and
