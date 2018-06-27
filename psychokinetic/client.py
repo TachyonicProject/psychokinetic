@@ -28,6 +28,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 from luxon.utils.http import Client as HTTPClient
+from luxon import g
 
 
 class Client(HTTPClient):
@@ -178,6 +179,7 @@ class Client(HTTPClient):
         if tenant_id is not None:
             self['X-Tenant-Id'] = tenant_id
 
+
     def unscope(self):
         """Unscope Token.
         """
@@ -186,6 +188,7 @@ class Client(HTTPClient):
             del self['X-Domain']
         if 'X-Tenant-Id' in self:
             del self['X-Tenant-Id']
+        g.current_request.scope_token = None
 
     def new_endpoint(self, name, interface, region, uri):
         req = {}
