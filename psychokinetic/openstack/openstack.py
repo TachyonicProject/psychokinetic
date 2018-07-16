@@ -28,12 +28,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 from luxon.utils.http import Client
-
-from psychokinetic.openstack.api.identityv3 import IdentityV3
-from psychokinetic.openstack.api.orchestrationv1 import OrchestrationV1
 # from psychokinetic.openstack.api.networking2 import Networking2
 # from psychokinetic.openstack.api.computev21 import Compute21
 from psychokinetic.openstack.api.contrail4 import Contrail4
+from psychokinetic.openstack.api.identityv3 import IdentityV3
+from psychokinetic.openstack.api.orchestrationv1 import OrchestrationV1
+
+
 # from psychokinetic.openstack.api.contrail5 import Contrail5
 
 
@@ -43,7 +44,16 @@ class Openstack(Client):
     Log in and change scope with with Keystone, then execute on the chosen
     Service.
 
+    Args:
+        keystone_url(str): URL of Keystone API.
+        region(str): Region of this Openstack implementation.
+        interface(str): Which openstack interface to use - 'public', 'internal'
+                        or 'admin'.
+
     Example usage:
+
+    .. code:: python
+
         os = Openstack(keystone_url='http://example:5000/v3', region="RegionOne")
         os.identity.authenticate('admin','password','default')
         os.identity.scope(project_name="Customer1", domain="default")
@@ -51,7 +61,6 @@ class Openstack(Client):
 
     """
     def __init__(self, keystone_url,
-                 contrail_url=None,
                  region='RegionOne',
                  interface='public'):
         # The user should only be able to select interface public or internal.
@@ -79,7 +88,7 @@ class Openstack(Client):
         # interface, because its selected at Openstack client init.
         # The identity.authenticate method will populate these values.
         self._user_endpoints = {}
-        # WE have to fill below ones anyways.
+        # We have to fill below ones anyways.
         self._admin_endpoints = {}
         self._public_endpoints = {}
 
@@ -106,8 +115,3 @@ class Openstack(Client):
     def compute(self):
         # return Compute21(self, 'compute')
         pass
-
-    @property
-    def contrail(self):
-        return Contrail4(self)
-        # return Contrail5(self)
