@@ -276,17 +276,21 @@ def obj(req, ModelClass, sql_id=None, hide=None):
         if ('domain' in fields):
             domain_header = req.get_header('X-Domain')
             if req.credentials.domain == domain_header:
-                create.update({"domain": req.credentials.domain})
+                if model['domain'] is None:
+                    create.update({"domain": req.credentials.domain})
             else:
                 raise AccessDeniedError(
                     "Token not scoped for domain '%s'" % domain_header)
+
         if ('tenant_id' in fields):
             tenant_header = req.get_header('X-Tenant-Id')
             if req.credentials.tenant_id == tenant_header:
-                create.update({"tenant_id": req.credentials.tenant_id})
+                if model['tenant_id'] is None:
+                    create.update({"tenant_id": req.credentials.tenant_id})
             else:
                 raise AccessDeniedError(
                     "Token not scoped for Tenant '%s'" % tenant_header)
+
         model.update(create)
     elif (req.method == 'DELETE' and
             issubclass(ModelClass, SQLModel) and
