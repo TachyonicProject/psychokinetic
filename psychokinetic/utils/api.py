@@ -28,7 +28,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 from math import ceil
-from operator import itemgetter
+from luxon.utils.sort import Itemgetter
 
 from luxon import g
 from luxon import db
@@ -70,7 +70,7 @@ def raw_list(req, data, limit=None, rows=None):
                 raise ValueError("Invalid field search field value." +
                                  " Expecting 'field:value'")
             try:
-                if value not in row[search_field]:
+                if row[search_field] and value not in row[search_field]:
                     continue
             except KeyError:
                 raise ValueError("Unknown field '%s' in search" %
@@ -98,10 +98,10 @@ def raw_list(req, data, limit=None, rows=None):
 
             # Sort field desc/asc
             if order_type == 'desc':
-                result = list(sorted(result, key=itemgetter(order_field),
+                result = list(sorted(result, key=Itemgetter(order_field),
                                      reverse=True))
             elif order_type == 'asc':
-                result = list(sorted(result, key=itemgetter(order_field)))
+                result = list(sorted(result, key=Itemgetter(order_field)))
             else:
                 raise ValueError('Bad order for sort provided')
 
@@ -258,27 +258,39 @@ def sql_list(req, table, fields, limit=None, **kwargs):
 
 def obj(req, ModelClass, sql_id=None, hide=None):
     model = ModelClass(hide=hide)
+    fields = ModelClass.fields
     if issubclass(ModelClass, SQLModel) and sql_id:
         model.sql_id(sql_id)
 
-    fields = ModelClass.fields
-    if ('domain' in fields and
-            req.credentials.domain and
-            req.credentials.domain != model['domain']):
-        raise AccessDeniedError('object not in context domain')
-    if ('tenant_id' in fields and
-            req.credentials.tenant_id and
-            req.credentials.tenant_id != model['tenant_id']):
-        raise AccessDeniedError('object not in context tenant')
+        if ('domain' in fields and
+                req.credentials.domain and
+                req.credentials.domain != model['domain']):
+            raise AccessDeniedError('object not in context domain')
+        if ('tenant_id' in fields and
+                req.credentials.tenant_id and
+                req.credentials.tenant_id != model['tenant_id']):
+            raise AccessDeniedError('object not in context tenant')
 
     if req.method in ['POST', 'PATCH', 'PUT']:
         create = req.json.copy()
         if ('domain' in fields):
-            if req.credentials.domain:
-                create.update({"domain": req.credentials.domain})
+            domain_header = req.get_header('X-Domain')
+            if req.credentials.domain == domain_header:
+                if model['domain'] is None:
+                    create.update({"domain": req.credentials.domain})
+            else:
+                raise AccessDeniedError(
+                    "Token not scoped for domain '%s'" % domain_header)
+
         if ('tenant_id' in fields):
-            if req.credentials.tenant_id:
-                create.update({"tenant_id": req.credentials.tenant_id})
+            tenant_header = req.get_header('X-Tenant-Id')
+            if req.credentials.tenant_id == tenant_header:
+                if model['tenant_id'] is None:
+                    create.update({"tenant_id": req.credentials.tenant_id})
+            else:
+                raise AccessDeniedError(
+                    "Token not scoped for Tenant '%s'" % tenant_header)
+
         model.update(create)
     elif (req.method == 'DELETE' and
             issubclass(ModelClass, SQLModel) and
