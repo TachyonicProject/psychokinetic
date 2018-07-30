@@ -95,9 +95,8 @@ class Openstack(Client):
         self._admin_endpoints = {}
         self._public_endpoints = {}
 
-        # The following interfadce, region is used to by identity.authenticate
-        # to determine the endpoints that are stored above in
-        # self.user_endpoints.
+        # The following interface, region is used to by identity.scope
+        # to determine the endpoints that are stored above in endpoints.
         self.interface = interface
         self.region = region
 
