@@ -40,17 +40,17 @@ class APIBase(object):
 
     @property
     def url(self):
-        if self._type in self._client._user_endpoints:
-            return self._client._user_endpoints[self._type]
+        """Returns url for the given Region, interface and endpoint.
+        """
+        if self._client.interface == 'internal':
+            _ep_interface = '_user_endpoints'
         else:
-            raise ValueError("No '%s' endpoint found" % self._type)
+            _ep_interface = '_%s_endpoints' % self._client.interface
 
-    @property
-    def admin(self):
-        if self._type in self._client._admin_endpoints:
-            return self._client._admin_endpoints[self._type]
-        else:
-            raise ValueError("No '%s' admin endpoint found" % self._type)
+        if self._type in getattr(self._client, _ep_interface):
+            return getattr(self._client,_ep_interface)[self._type]
+
+        raise ValueError("No '%s' endpoint found" % self._type)
 
     def execute(self, method, uri, **kwargs):
         uri = self.url + '/' + uri
