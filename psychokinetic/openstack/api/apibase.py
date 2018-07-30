@@ -30,12 +30,23 @@
 
 
 class APIBase(object):
+    """APIBase object.
+
+    Openstack Endpoint Classes inherits this Base class.
+
+    Args:
+        client (obj): Some sort of psychokinetic.client obj.
+        type (str): Openstack Endpoint Type: internal, public, or admin
+
+    """
     def __init__(self, client, type):
         self._client = client
         self._type = type
 
     @property
     def client(self):
+        """The psychokinetic.client obj passed for init.
+        """
         return self._client
 
     @property
@@ -53,5 +64,15 @@ class APIBase(object):
         raise ValueError("No '%s' endpoint found" % self._type)
 
     def execute(self, method, uri, **kwargs):
+        """Executes the call on the given URI.
+
+        Ags:
+            method (str): Method to use for API call.
+            uri (str): URI to call.
+            kwargs (kwargs): Additional keyword arguments
+
+        Returns:
+            Response object.
+        """
         uri = self.url + '/' + uri
         return self.client.execute(method, uri, **kwargs)
