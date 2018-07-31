@@ -126,3 +126,13 @@ class IdentityV3(APIBase):
             del self.client['domain_header']
         except:
             pass
+
+    def revoke(self, token):
+        """Revokes token
+
+        Args:
+            token (str): Token to revoke.
+        """
+        _token_url = self.client.keystone_url.rstrip('/') + '/auth/tokens'
+        self.client['X-Subject-Token'] = token
+        return self.client.execute('DELETE', _token_url)

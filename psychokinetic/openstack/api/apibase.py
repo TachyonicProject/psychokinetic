@@ -27,6 +27,24 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+from luxon.core.handlers.wsgi.request import Request
+from luxon.exceptions import FieldMissing
+
+
+def getScope(req):
+    gotOne = False
+    scope = {'domain': req.context_domain}
+    if 'project_name' in req.json:
+        scope['project_name'] = req.json['project_name']
+        gotOne = True
+    if 'project_id' in req.json:
+        scope['project_id'] = req.json['project_id']
+        gotOne = True
+    if not gotOne:
+        raise FieldMissing(field="project_name or project_id",
+                           label="Project",
+                           description="Please Specify Tenant/Project")
+    return scope
 
 
 class APIBase(object):
@@ -39,6 +57,7 @@ class APIBase(object):
         type (str): Openstack Endpoint Type: internal, public, or admin
 
     """
+
     def __init__(self, client, type):
         self._client = client
         self._type = type
@@ -59,11 +78,11 @@ class APIBase(object):
             _ep_interface = '_%s_endpoints' % self._client.interface
 
         if self._type in getattr(self._client, _ep_interface):
-            return getattr(self._client,_ep_interface)[self._type]
+            return getattr(self._client, _ep_interface)[self._type]
 
         raise ValueError("No '%s' endpoint found" % self._type)
 
-    def execute(self, method, uri, **kwargs):
+    def execute(self, method, uri='', **kwargs):
         """Executes the call on the given URI.
 
         Ags:
@@ -74,5 +93,11 @@ class APIBase(object):
         Returns:
             Response object.
         """
+        if isinstance(method, Request):
+            uri = method.json['uri']
+            kwargs['data'] = method.json['data']
+            self.client.identity.scope(**getScope(method))
+            method = method.json['method']
+
         uri = self.url + '/' + uri
         return self.client.execute(method, uri, **kwargs)
