@@ -27,24 +27,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-from luxon.core.handlers.wsgi.request import Request
-from luxon.exceptions import FieldMissing
-
-
-def getScope(req):
-    gotOne = False
-    scope = {'domain': req.context_domain}
-    if 'project_name' in req.json:
-        scope['project_name'] = req.json['project_name']
-        gotOne = True
-    if 'project_id' in req.json:
-        scope['project_id'] = req.json['project_id']
-        gotOne = True
-    if not gotOne:
-        raise FieldMissing(field="project_name or project_id",
-                           label="Project",
-                           description="Please Specify Tenant/Project")
-    return scope
 
 
 class APIBase(object):
@@ -86,18 +68,12 @@ class APIBase(object):
         """Executes the call on the given URI.
 
         Ags:
-            method (str): Method to use for API call.
+            method (str): String Method to use for API call.
             uri (str): URI to call.
             kwargs (kwargs): Additional keyword arguments
 
         Returns:
             Response object.
         """
-        if isinstance(method, Request):
-            uri = method.json['uri']
-            kwargs['data'] = method.json['data']
-            self.client.identity.scope(**getScope(method))
-            method = method.json['method']
-
         uri = self.url + '/' + uri
         return self.client.execute(method, uri, **kwargs)
