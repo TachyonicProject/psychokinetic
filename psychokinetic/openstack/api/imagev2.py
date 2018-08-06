@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018 Christiaan Frans Rademan.
+# Copyright (c) 2018 Dave Kruger.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,21 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+from psychokinetic.openstack.api.apibase import APIBase
 
-from psychokinetic.openstack.api.contrail4 import Contrail4
 
-class Contrail5(Contrail4):
-    pass
+class ImageV2(APIBase):
+
+    @property
+    def url(self):
+        """Returns url for the given Region, interface and endpoint.
+        """
+        _url = super().url
+        versions = super().client.execute('GET',_url).json
+        for value in versions['versions']:
+            if value['status'] == 'CURRENT':
+                links = value['links']
+                for link in links:
+                    if link['rel'] == 'self':
+                        return link['href']
+        raise ValueError("No 'v2.0' link found for %s" % _url)

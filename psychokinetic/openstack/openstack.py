@@ -28,15 +28,19 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 from luxon.utils.http import Client
-# from psychokinetic.openstack.api.networking2 import Networking2
-# from psychokinetic.openstack.api.computev21 import Compute21
-from psychokinetic.openstack.api.contrail4 import Contrail4
 from psychokinetic.openstack.api.identityv3 import IdentityV3
-from psychokinetic.openstack.api.orchestrationv1 import OrchestrationV1
-
-
-# from psychokinetic.openstack.api.contrail5 import Contrail5
-
+from psychokinetic.openstack.api.networkv2 import NetworkV2
+from psychokinetic.openstack.api.imagev2 import ImageV2
+from psychokinetic.openstack.api.apibase import APIBase as OrchestrationV1
+from psychokinetic.openstack.api.apibase import APIBase as ComputeV1
+from psychokinetic.openstack.api.apibase import APIBase as VolumeV1
+from psychokinetic.openstack.api.apibase import APIBase as VolumeV2
+from psychokinetic.openstack.api.apibase import APIBase as VolumeV3
+from psychokinetic.openstack.api.apibase import APIBase as ObjectStoreV1
+from psychokinetic.openstack.api.apibase import APIBase as WorkloadsV1
+from psychokinetic.openstack.api.apibase import APIBase as S3V1
+from psychokinetic.openstack.api.apibase import APIBase as CloudformationV1
+from psychokinetic.openstack.api.apibase import APIBase as MeteringV1
 
 class Openstack(Client):
     """Restclient to use on Openstack Implementation.
@@ -68,7 +72,6 @@ class Openstack(Client):
 
         super().__init__()
         self.keystone_url = keystone_url
-        self.contrail_url = contrail_url
 
         # We store the login token here, it will also be placed in the global
         # HTTP client headers using Client[header] = value.
@@ -86,15 +89,14 @@ class Openstack(Client):
         # network, orchestration, volume, volume2, volumev3, etc.
         # The value being the url. Its not neccessary to store region,
         # interface, because its selected at Openstack client init.
-        # The identity.authenticate method will populate these values.
+        # The identity.scope method will populate these values.
         self._user_endpoints = {}
         # We have to fill below ones anyways.
         self._admin_endpoints = {}
         self._public_endpoints = {}
 
-        # The following interfadce, region is used to by identity.authenticate
-        # to determine the endpoints that are stored above in
-        # self.user_endpoints.
+        # The following interface, region is used to by identity.scope
+        # to determine the endpoints that are stored above in endpoints.
         self.interface = interface
         self.region = region
 
@@ -103,15 +105,49 @@ class Openstack(Client):
         return IdentityV3(self, 'identity')
 
     @property
+    def compute(self):
+        return ComputeV1(self, 'compute')
+
+    @property
     def orchestration(self):
         return OrchestrationV1(self, 'orchestration')
 
     @property
-    def networking(self):
-        # return Networking2(self, 'network')
-        pass
+    def network(self):
+        return NetworkV2(self, 'network')
 
     @property
-    def compute(self):
-        # return Compute21(self, 'compute')
-        pass
+    def volume(self):
+        return VolumeV1(self, 'volume')
+
+    @property
+    def volumev2(self):
+        return VolumeV2(self, 'volumev2')
+
+    @property
+    def volumev3(self):
+        return VolumeV3(self, 'volumev3')
+
+    @property
+    def image(self):
+        return ImageV2(self, 'image')
+
+    @property
+    def object_store(self):
+        return ObjectStoreV1(self, 'object-store')
+
+    @property
+    def workloads(self):
+        return WorkloadsV1(self, 'workloads')
+
+    @property
+    def s3(self):
+        return S3V1(self, 's3')
+
+    @property
+    def cloudformation(self):
+        return CloudformationV1(self, 'cloudformation')
+
+    @property
+    def metering(self):
+        return MeteringV1(self, 'metering')

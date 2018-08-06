@@ -36,6 +36,13 @@ from luxon.exceptions import FieldMissing
 class IdentityV3(APIBase):
 
     def authenticate(self, username, password, domain):
+        """Authenticates against Keystone.
+
+        Args:
+            username (str): Username.
+            password (str): Password.
+            domain (str):  Domain.
+        """
         _token_url = self.client.keystone_url.rstrip('/') + '/auth/tokens'
         _password = {
             'user': {'name': username, 'domain': {'name': domain},
@@ -119,3 +126,13 @@ class IdentityV3(APIBase):
             del self.client['domain_header']
         except:
             pass
+
+    def revoke(self, token):
+        """Revokes token
+
+        Args:
+            token (str): Token to revoke.
+        """
+        _token_url = self.client.keystone_url.rstrip('/') + '/auth/tokens'
+        self.client['X-Subject-Token'] = token
+        return self.client.execute('DELETE', _token_url)

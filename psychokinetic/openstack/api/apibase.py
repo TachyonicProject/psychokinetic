@@ -30,28 +30,50 @@
 
 
 class APIBase(object):
+    """APIBase object.
+
+    Openstack Endpoint Classes inherits this Base class.
+
+    Args:
+        client (obj): Some sort of psychokinetic.client obj.
+        type (str): Openstack Endpoint Type: internal, public, or admin
+
+    """
+
     def __init__(self, client, type):
         self._client = client
         self._type = type
 
     @property
     def client(self):
+        """The psychokinetic.client obj passed for init.
+        """
         return self._client
 
     @property
     def url(self):
-        if self._type in self._client._user_endpoints:
-            return self._client._user_endpoints[self._type]
+        """Returns url for the given Region, interface and endpoint.
+        """
+        if self._client.interface == 'internal':
+            _ep_interface = '_user_endpoints'
         else:
-            raise ValueError("No '%s' endpoint found" % self._type)
+            _ep_interface = '_%s_endpoints' % self._client.interface
 
-    @property
-    def admin(self):
-        if self._type in self._client._admin_endpoints:
-            return self._client._admin_endpoints[self._type]
-        else:
-            raise ValueError("No '%s' admin endpoint found" % self._type)
+        if self._type in getattr(self._client, _ep_interface):
+            return getattr(self._client, _ep_interface)[self._type]
 
-    def execute(self, method, uri, **kwargs):
+        raise ValueError("No '%s' endpoint found" % self._type)
+
+    def execute(self, method, uri='', **kwargs):
+        """Executes the call on the given URI.
+
+        Ags:
+            method (str): String Method to use for API call.
+            uri (str): URI to call.
+            kwargs (kwargs): Additional keyword arguments
+
+        Returns:
+            Response object.
+        """
         uri = self.url + '/' + uri
         return self.client.execute(method, uri, **kwargs)
