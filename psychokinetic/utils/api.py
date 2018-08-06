@@ -106,7 +106,7 @@ def raw_list(req, data, limit=None, rows=None):
                 raise ValueError('Bad order for sort provided')
 
     # Step 4 Limit rows based on pages.
-    if rows is None:
+    if limit > 0 and rows is None:
         result = result[start:end]
 
     # Step 5 Build links next &/ /previous
@@ -120,15 +120,19 @@ def raw_list(req, data, limit=None, rows=None):
                     req.netloc +
                     req.app + req.route)
 
-    if page + 1 > 1:
-        links['previous'] = resource + '?limit=%s&page=%s' % (limit, page,)
-        links['previous'] += sort_query
-        links['previous'] += search_query
+    if limit > 0:
+        if page + 1 > 1:
+            links['previous'] = resource + '?limit=%s&page=%s' % (limit, page,)
+            links['previous'] += sort_query
+            links['previous'] += search_query
 
-    if page + 1 < ceil(rows / limit):
-        links['next'] = resource + '?limit=%s&page=%s' % (limit, page + 2,)
-        links['next'] += sort_query
-        links['next'] += search_query
+        if page + 1 < ceil(rows / limit):
+            links['next'] = resource + '?limit=%s&page=%s' % (limit, page + 2,)
+            links['next'] += sort_query
+            links['next'] += search_query
+        pages = ceil(rows / limit)
+    else:
+        pages = 1
 
     # Step 6 Finally return result
     return {
@@ -137,7 +141,7 @@ def raw_list(req, data, limit=None, rows=None):
         'metadata': {
             "records": rows,
             "page": page + 1,
-            "pages": ceil(rows / limit),
+            "pages": pages,
             "per_page": limit,
             "sort": sort,
             "search": searches,
@@ -173,7 +177,11 @@ def sql_list(req, table, fields, limit=None, **kwargs):
 
     page = int(req.query_params.get('page', 1)) - 1
     start = page * limit
-    limit_range_query = " LIMIT %s, %s" % (start, limit,)
+
+    if limit <= 0:
+        limit_range_query = ""
+    else:
+        limit_range_query = " LIMIT %s, %s" % (start, limit,)
 
     # Step 3 Search
     search_query = {}
