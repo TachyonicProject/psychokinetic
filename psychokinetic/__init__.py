@@ -27,5 +27,7 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+from psychokinetic.client import Client
+from psychokinetic.github import GitHub
 from psychokinetic.openstack.openstack import Openstack
 from psychokinetic.openstack.contrail import Contrail

@@ -71,7 +71,7 @@ class Client(HTTPClient):
                     endpoint['region'] == region):
                 self.endpoints[endpoint['name']] = endpoint['uri']
 
-    def password(self, username, password, domain='default'):
+    def password(self, username, password, domain=None):
         """Authenticate using credentials.
 
         Once authenticated execute will be processed using the context
@@ -209,3 +209,17 @@ class Client(HTTPClient):
 
     def user_tenants(self, **kwargs):
         return self.execute('GET', '/v1/tenants', params=kwargs)
+
+    def _upload(self, url, path,
+               file_object,
+               mime_type='text/plain; charset=utf-8'):
+        url = url.rstrip('/') + '/v1/' + path.strip('/')
+        return self.execute('POST',
+                            url,
+                            data=file_object,
+                            mime_type=mime_type)
+
+    def _download(self, url, path):
+        url = url.rstrip('/') + '/v1/' + path.strip('/')
+        return self.stream('GET', url)
+        
