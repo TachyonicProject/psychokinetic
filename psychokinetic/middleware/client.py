@@ -35,7 +35,7 @@ from psychokinetic.client import Client as APIClient
 class Client(object):
     def pre(self, req, resp):
         req.context.api = api = APIClient(
-            url=g.app.config.get('restapi', 'url')
+            url=g.app.config.get('identity', 'url')
         )
         req.context.api.set_context(req.user_token,
                         req.scope_token,
