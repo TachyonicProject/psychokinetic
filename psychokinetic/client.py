@@ -27,11 +27,16 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+import pickle
+from types import GeneratorType
+
+from luxon.utils.files import joinpath
 from luxon.utils.http import Client as HTTPClient
 from luxon import g
 
+from psychokinetic.objectstore.client import ObjectStore 
 
-class Client(HTTPClient):
+class Client(HTTPClient, ObjectStore):
     """Tachyonic RestApi Client.
 
     Client wrapped around RestClient using python requests.
@@ -61,7 +66,21 @@ class Client(HTTPClient):
                  auth=None, verify=True,
                  cert=None):
         super().__init__(url, timeout, auth, verify, cert)
+        self._reauth = None
         self.regions = set([])
+
+    def execute(self, method, uri, params=None,
+                data=None, headers=None, endpoint=None, **kwargs):
+        params = params or {}
+        headers = headers or {}
+        try:
+            return super().execute(method, uri, params, data, headers, endpoint, **kwargs)
+        except:
+            if self._reauth:
+                self._reauth()
+                return super().execute(method, uri, params, data, headers, endpoint, **kwargs)
+            else:
+                raise
 
     def collect_endpoints(self, region="Region1", interface='public'):
         response = self.execute('GET', '/v1/endpoints')
@@ -70,6 +89,19 @@ class Client(HTTPClient):
             if (endpoint['interface'] == interface and
                     endpoint['region'] == region):
                 self.endpoints[endpoint['name']] = endpoint['uri']
+
+    def config(self):
+        self._url = g.app.config.get('identity', 'url')
+        domain = g.app.config.get('identity', 'domain', fallback=None)
+        username = g.app.config.get('identity', 'username', fallback=None)
+        password = g.app.config.get('identity', 'password', fallback=None)
+        tenant_id = g.app.config.get('identity', 'tenant_id', fallback=None)
+        interface = g.app.config.get('identity', 'interface', fallback=None)
+        region = g.app.config.get('identity', 'region', fallback=None)
+        self.password(username, password, domain)
+        self.collect_endpoints(region, interface)
+        self.scope(domain, tenant_id)
+        self._reauth = self.config
 
     def password(self, username, password, domain=None):
         """Authenticate using credentials.
@@ -84,6 +116,7 @@ class Client(HTTPClient):
 
         Returns authenticated result.
         """
+        self._reauth = None
         auth_url = "/v1/token"
 
         if 'X-Tenant-Id' in self:
@@ -120,6 +153,8 @@ class Client(HTTPClient):
 
         Returns authenticated result.
         """
+        self._reauth = False
+
         auth_url = "/v1/token"
 
         response = self.execute("GET", auth_url)
@@ -209,17 +244,3 @@ class Client(HTTPClient):
 
     def user_tenants(self, **kwargs):
         return self.execute('GET', '/v1/tenants', params=kwargs)
-
-    def _upload(self, url, path,
-               file_object,
-               mime_type='text/plain; charset=utf-8'):
-        url = url.rstrip('/') + '/v1/' + path.strip('/')
-        return self.execute('POST',
-                            url,
-                            data=file_object,
-                            mime_type=mime_type)
-
-    def _download(self, url, path):
-        url = url.rstrip('/') + '/v1/' + path.strip('/')
-        return self.stream('GET', url)
-        
