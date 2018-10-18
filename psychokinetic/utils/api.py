@@ -267,16 +267,25 @@ def sql_list(req, table, fields, limit=None, **kwargs):
 def obj(req, ModelClass, sql_id=None, hide=None):
     model = ModelClass(hide=hide)
     fields = ModelClass.fields
+    allow_self_query = False
     if issubclass(ModelClass, SQLModel) and sql_id:
         model.sql_id(sql_id)
 
+        # After switching context to Tenant, access to this tenant
+        # must still be allowed.
+        if (req.credentials.tenant_id and
+                req.credentials.tenant_id == sql_id):
+            allow_self_query = True
+
         if ('domain' in fields and
                 req.credentials.domain and
-                req.credentials.domain != model['domain']):
+                req.credentials.domain != model['domain'] and
+                not allow_self_query):
             raise AccessDeniedError('object not in context domain')
         if ('tenant_id' in fields and
                 req.credentials.tenant_id and
-                req.credentials.tenant_id != model['tenant_id']):
+                req.credentials.tenant_id != model['tenant_id'] and
+                not allow_self_query):
             raise AccessDeniedError('object not in context tenant')
 
     if req.method in ['POST', 'PATCH', 'PUT']:
