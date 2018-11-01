@@ -69,5 +69,5 @@ class Contrail(Client):
             'X-Auth-Token'] = self.os.identity.client._scoped_token
 
     def execute(self, method, uri, **kwargs):
-        uri = self.url + '/' + uri
+        uri = self.url + '/' + uri.lstrip('/')
         return super().execute(method, uri, **kwargs)
