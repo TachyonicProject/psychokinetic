@@ -29,12 +29,17 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 import pickle
 from types import GeneratorType
+import multiprocessing
 
 from luxon.utils.files import joinpath
 from luxon.utils.http import Client as HTTPClient
 from luxon import g
+from luxon.exceptions import TokenExpiredError
+from luxon.helpers.cache import cache
 
 from psychokinetic.objectstore.client import ObjectStore 
+
+lock = multiprocessing.Lock()
 
 class Client(HTTPClient, ObjectStore):
     """Tachyonic RestApi Client.
@@ -67,28 +72,51 @@ class Client(HTTPClient, ObjectStore):
                  cert=None):
         super().__init__(url, timeout, auth, verify, cert)
         self._reauth = None
-        self.regions = set([])
+        self._regions = set([])
 
     def execute(self, method, uri, params=None,
-                data=None, headers=None, endpoint=None, **kwargs):
+                data=None, headers=None, endpoint=None,
+                sort=None, limit=None, page=None, **kwargs):
+
         params = params or {}
+
+        if limit is not None:
+            params['limit'] = limit
+        if page is not None:
+            params['page'] = page
+        if sort is not None:
+            params['sort'] = page
+
+        # Important for confederations etc..
+        if endpoint == 'identity' and 'identity' not in self.endpoints:
+            endpoint = None
+
         headers = headers or {}
         try:
-            return super().execute(method, uri, params, data, headers, endpoint, **kwargs)
-        except:
-            if self._reauth:
-                self._reauth()
-                return super().execute(method, uri, params, data, headers, endpoint, **kwargs)
-            else:
-                raise
+            return super().execute(method, uri, params,
+                                   data, headers, endpoint,
+                                   default_endpoint_name='identity',
+                                   **kwargs)
+        except TokenExpiredError:
+            with lock:
+                if self._reauth:
+                    self._reauth()
+                    return super().execute(method, uri, params, data, headers, endpoint, **kwargs)
+                else:
+                    raise
 
     def collect_endpoints(self, region="Region1", interface='public'):
-        response = self.execute('GET', '/v1/endpoints')
+        response = cache(60, self.execute, 'GET', '/v1/endpoints')
+        #response = self.execute('GET', '/v1/endpoints')
         for endpoint in response.json['payload']:
-            self.regions.add(endpoint['region'])
-            if (endpoint['interface'] == interface and
-                    endpoint['region'] == region):
-                self.endpoints[endpoint['name']] = endpoint['uri']
+            if endpoint['interface'] == interface:
+                self._regions.add(endpoint['region'])
+                if endpoint['region'] == region:
+                    self.endpoints[endpoint['name']] = endpoint['uri']
+
+    @property
+    def regions(self):
+        return sorted(list(self._regions))
 
     def config(self):
         self._url = g.app.config.get('identity', 'url')
@@ -99,7 +127,6 @@ class Client(HTTPClient, ObjectStore):
         interface = g.app.config.get('identity', 'interface', fallback=None)
         region = g.app.config.get('identity', 'region', fallback=None)
         self.password(username, password, domain)
-        self.collect_endpoints(region, interface)
         self.scope(domain, tenant_id)
         self._reauth = self.config
 
@@ -132,7 +159,8 @@ class Client(HTTPClient, ObjectStore):
             }
         }
 
-        response = self.execute("POST", auth_url, data=data)
+        response = self.execute("POST", auth_url, data=data,
+                                endpoint='identity')
 
         if 'token' in response.json:
             self['X-Auth-Token'] = response.json['token']
@@ -157,7 +185,8 @@ class Client(HTTPClient, ObjectStore):
 
         auth_url = "/v1/token"
 
-        response = self.execute("GET", auth_url)
+        response = self.execute("GET", auth_url,
+                                endpoint='identity')
 
         if 'token' in response.json:
             self['X-Auth-Token'] = response.json['token']
@@ -183,7 +212,8 @@ class Client(HTTPClient, ObjectStore):
         scope['domain'] = domain
         scope['tenant_id'] = tenant_id
 
-        response = self.execute("PATCH", auth_url, data=scope)
+        response = self.execute("PATCH", auth_url, data=scope,
+                                endpooint='identity')
 
         if 'token' in response.json:
             self['X-Auth-Token'] = response.json['token']
@@ -213,7 +243,6 @@ class Client(HTTPClient, ObjectStore):
 
         if tenant_id is not None:
             self['X-Tenant-Id'] = tenant_id
-
 
     def unscope(self):
         """Unscope Token.
