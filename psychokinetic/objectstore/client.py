@@ -79,8 +79,8 @@ class ObjectStore(object):
         url = url.rstrip('/') + '/v1/' + path.strip('/')
         return self.execute('HEAD', url)
 
-    def storage_shards(self):
-        return self.execute('GET', '/v1/shards', endpoint='katalog')
+    def storage(self, **kwargs):
+        return self.execute('GET', '/v1/storage', endpoint='katalog', **kwargs)
 
     def put_object(self,
                    tenant_id,

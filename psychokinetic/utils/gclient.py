@@ -28,20 +28,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 from luxon import g
+from luxon.exceptions import Error
 
 from psychokinetic.client import Client as APIClient
 
-
-class Client(object):
-    def pre(self, req, resp):
-        req.context.api = api = APIClient(
-            url=g.app.config.get('identity', 'url')
-        )
-        req.context.api.set_context(req.user_token,
-                                    req.scope_token,
-                                    req.context_domain,
-                                    req.context_tenant_id)
-
-        req.context.api.collect_endpoints(req.context_region,
-                                          req.context_interface)
-        
+if g.app.config.get('identity', 'username', fallback=None):
+    g.api = api = APIClient()
+    try:
+        g.api.config()
+    except Exception as e:
+        raise Error('Global API failed "%s"' % e)
