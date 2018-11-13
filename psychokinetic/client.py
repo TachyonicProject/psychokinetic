@@ -106,7 +106,8 @@ class Client(HTTPClient, ObjectStore):
                     raise
 
     def collect_endpoints(self, region="Region1", interface='public'):
-        response = cache(60, self.execute, 'GET', '/v1/endpoints')
+        response = cache(30, self.execute, 'GET', '/v1/endpoints',
+                         headers=False)
         #response = self.execute('GET', '/v1/endpoints')
         for endpoint in response.json['payload']:
             if endpoint['interface'] == interface:
