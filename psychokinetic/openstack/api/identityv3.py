@@ -48,8 +48,8 @@ class IdentityV3(APIBase):
             'user': {'name': username, 'domain': {'name': domain},
                      'password': password}}
         _identity = {'methods': ['password'], 'password': _password}
-        _auth = {'identity': _identity}
-        _login = json.dumps({'auth': _auth})
+        _auth = {'identity': _identity, 'scope': 'unscoped'}
+        _login = {'auth': _auth}
 
         _response = self.client.execute('POST', _token_url, data=_login)
 

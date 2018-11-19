@@ -27,6 +27,7 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+from luxon import constants as const
 from luxon.utils.http import Client
 from psychokinetic.openstack.api.identityv3 import IdentityV3
 from psychokinetic.openstack.api.networkv2 import NetworkV2
@@ -71,6 +72,7 @@ class Openstack(Client):
         # Lower case it as well and lower the ones we get.
 
         super().__init__()
+        self['Content-Type'] = const.APPLICATION_JSON
         self.keystone_url = keystone_url
 
         # We store the login token here, it will also be placed in the global
