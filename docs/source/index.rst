@@ -21,4 +21,4 @@ Documentation
 
    license
    install
-
+   releases
