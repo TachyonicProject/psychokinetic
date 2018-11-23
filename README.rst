@@ -1,7 +1,7 @@
 Installation
 ============
 
-Tachyonic Project psychokinetic currently fully supports `CPython <https://www.python.org/downloads/>`__ 3.6.
+Tachyonic Project psychokinetic currently fully supports `CPython <https://www.python.org/downloads/>`__ 3.6, 3.7.
 
 
 CPython
