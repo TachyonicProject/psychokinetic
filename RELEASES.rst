@@ -1,7 +1,7 @@
 Releases
 ########
 
-1.0.0 = BETA Release (2019/01/28)
+1.5.0 = BETA Release (2019/01/28)
 ---------------------------------
 
 This module is still in planning phase, however released for usage and testing.
