@@ -32,9 +32,10 @@ from luxon.exceptions import Error
 
 from psychokinetic.client import Client as APIClient
 
-if g.app.config.get('identity', 'username', fallback=None):
-    g.api = api = APIClient()
-    try:
-        g.api.config()
-    except Exception as e:
-        raise Error('Global API failed "%s"' % e)
+def gclient():
+    if g.app.config.get('identity', 'username', fallback=None):
+        g.api = api = APIClient()
+        try:
+            g.api.config()
+        except Exception as e:
+            raise Error('Global API failed "%s"' % e)
