@@ -27,19 +27,17 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-import pickle
-from types import GeneratorType
 import multiprocessing
 
-from luxon.utils.files import joinpath
 from luxon.utils.http import Client as HTTPClient
 from luxon import g
 from luxon.exceptions import TokenExpiredError
 from luxon.helpers.cache import cache
 
-from psychokinetic.objectstore.client import ObjectStore 
+from psychokinetic.objectstore.client import ObjectStore
 
 lock = multiprocessing.Lock()
+
 
 class Client(HTTPClient, ObjectStore):
     """Tachyonic RestApi Client.
@@ -147,10 +145,13 @@ class Client(HTTPClient, ObjectStore):
         self._reauth = None
         auth_url = "/v1/token"
 
-        if 'X-Tenant-Id' in self:
-            del self['X-Tenant-Id']
         if 'X-Auth-Token' in self:
             del self['X-Auth-Token']
+        if 'X-Domain' in self:
+            del self['X-Domain']
+        if 'X-Tenant-Id' in self:
+            del self['X-Tenant-Id']
+        self.auth_token = None
 
         data = {
             "username": username,
@@ -166,6 +167,10 @@ class Client(HTTPClient, ObjectStore):
         if 'token' in response.json:
             self['X-Auth-Token'] = response.json['token']
             self.auth_token = response.json['token']
+        if 'tenant_id' in response.json:
+            self['X-Tenant-Id'] = response.json['tenant_id']
+        if 'domain' in response.json:
+            self['X-Domain'] = response.json['domain']
 
         return response
 
@@ -186,11 +191,22 @@ class Client(HTTPClient, ObjectStore):
 
         auth_url = "/v1/token"
 
+        if 'X-Auth-Token' in self:
+            del self['X-Auth-Token']
+        if 'X-Domain' in self:
+            del self['X-Domain']
+        if 'X-Tenant-Id' in self:
+            del self['X-Tenant-Id']
+
+        self.auth_token = token
+        self['X-Auth-Token'] = token
+
         response = self.execute("GET", auth_url,
                                 endpoint='identity')
 
         if 'token' in response.json:
             self['X-Auth-Token'] = response.json['token']
+            self.auth_token = response.json['token']
         if 'tenant_id' in response.json:
             self['X-Tenant-Id'] = response.json['tenant_id']
         if 'domain' in response.json:
