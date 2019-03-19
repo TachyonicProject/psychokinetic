@@ -99,14 +99,14 @@ class Client(HTTPClient, ObjectStore):
             with lock:
                 if self._reauth:
                     self._reauth()
-                    return super().execute(method, uri, params, data, headers, endpoint, **kwargs)
+                    return super().execute(method, uri, params,
+                                           data, headers, endpoint, **kwargs)
                 else:
                     raise
 
     def collect_endpoints(self, region="Region1", interface='public'):
         response = cache(30, self.execute, 'GET', '/v1/endpoints',
                          headers=False)
-        #response = self.execute('GET', '/v1/endpoints')
         for endpoint in response.json['payload']:
             if endpoint['interface'] == interface:
                 self._regions.add(endpoint['region'])
@@ -211,6 +211,16 @@ class Client(HTTPClient, ObjectStore):
             self['X-Tenant-Id'] = response.json['tenant_id']
         if 'domain' in response.json:
             self['X-Domain'] = response.json['domain']
+
+        return response
+
+    def extend(self):
+        """Extend Token.
+        """
+        auth_url = "/v1/token"
+
+        response = self.execute("PUT", auth_url,
+                                endpooint='identity')
 
         return response
 
