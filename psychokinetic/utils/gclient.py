@@ -37,5 +37,6 @@ def gclient():
         g.api = api = APIClient()
         try:
             g.api.config()
+            g.api.collect_endpoints()
         except Exception as e:
             raise Error('Global API failed "%s"' % e)
