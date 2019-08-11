@@ -181,7 +181,12 @@ setup_dict = dict(
     tests_require=install_requires + tests_requires,
     cmdclass=cmdclass,
     zip_safe=False,  # don't use eggs
-    python_requires='>=3.6'
+    python_requires='>=3.6',
+    entry_points={
+        'console_scripts': [
+            'minion = psychokinetic.minion.minion:entry_point'
+        ],
+    },
 )
 
 
