@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018 Christiaan Frans Rademan, Dave Kruger.
+# Copyright (c) 2019 Christiaan Frans Rademan.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,45 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-from psychokinetic.minion.minion import Minion
-from psychokinetic.client import Client
-from psychokinetic.github import GitHub
-from psychokinetic.openstack.openstack import Openstack
-from psychokinetic.openstack.contrail import Contrail
+from logging import getLogger
+
+
+from luxon.helpers.elasticsearch import es
+
+
+log = getLogger(__name__)
+
+
+class Elastic(object):
+    def __init__(self):
+        self._es = None
+        self._connect()
+
+    def _connect(self):
+        self._es = es()
+
+    def bulk(self, body=None):
+        return self._es.bulk(body=body)
+
+    def create_index(self, index, shards=1, replicas=1, mapping=None):
+        body = {
+            "settings": {
+                "number_of_shards": shards,
+                "number_of_replicas": replicas
+            }
+        }
+        if mapping:
+            mapping = {
+                "mappings": {
+                    "properties": mapping
+                }
+            }
+            body = {**body, **mapping}
+        try:
+            self._es.indices.create(index=index, body=body)
+        except Exception as err:
+            log.warning(err)
+            return False
+
+    def index(self, index, body):
+        return self._es.index(index=index, body=body)
