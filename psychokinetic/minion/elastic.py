@@ -29,9 +29,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 from logging import getLogger
 
-
-from luxon.helpers.elasticsearch import es
-
+from luxon.helpers.elasticsearch import elasticsearch
 
 log = getLogger(__name__)
 
@@ -42,7 +40,7 @@ class Elastic(object):
         self._connect()
 
     def _connect(self):
-        self._es = es()
+        self._es = elasticsearch()
 
     def bulk(self, body=None):
         return self._es.bulk(body=body)
