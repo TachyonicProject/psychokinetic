@@ -104,7 +104,8 @@ class Proccessor(object):
         loop = self._loop = asyncio.get_event_loop()
 
         self._executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1024)
+            max_workers=128)
+        loop.set_default_executor(self._executor)
 
         async def _connect_to(reader, writer, conn_type):
             await async_send_pickle(writer,
