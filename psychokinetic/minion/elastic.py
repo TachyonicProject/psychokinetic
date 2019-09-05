@@ -49,7 +49,8 @@ class Elastic(object):
         body = {
             "settings": {
                 "number_of_shards": shards,
-                "number_of_replicas": replicas
+                "number_of_replicas": replicas,
+                "refresh_interval": '30s',
             }
         }
         if mapping:
@@ -60,9 +61,9 @@ class Elastic(object):
             }
             body = {**body, **mapping}
         try:
-            self._es.indices.create(index=index, body=body)
+            self._es.indices.create(index=index, body=body, ignore=400)
         except Exception as err:
-            log.warning(err)
+            log.critical(err)
             return False
 
     def index(self, index, body):
