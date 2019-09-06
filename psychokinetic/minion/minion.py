@@ -44,6 +44,7 @@ from luxon.core.logger import MPLogger
 from luxon.utils.unique import string_id
 from luxon.utils.pkg import EntryPoints
 from luxon.utils.system import require_root
+from luxon.utils.daemon import GracefulKiller
 
 from psychokinetic import metadata
 from psychokinetic.minion.processor import Proccessor
@@ -90,6 +91,12 @@ class Minion(object):
         self._id = self._minion_id()
         self._processors = []
         self._server_sock = None
+        self._running = False
+        GracefulKiller(self._killed)
+
+    def _killed(self, signal):
+        self._running = False
+        raise SystemExit()
 
     @property
     def ephemeral_id(self):
@@ -199,15 +206,17 @@ class Minion(object):
 
     def _run_forever(self):
         try:
+            self._running = True
             for proc in self._procs:
                 proc.start()
                 log.info("Started Process '%s'" % proc.name)
 
-            while True:
+            while self._running:
                 for no, proc in enumerate(self._procs):
+                    if not self._running:
+                        break
                     if not proc.is_alive():
                         proc.join()
-                        # self._proccessor[no].shutdown()
                         self._processors[no] = Proccessor(
                             self,
                             self._mplogger,
@@ -218,7 +227,7 @@ class Minion(object):
                             self._sc,
                             **self._kwargs)
                         self._procs[no] = (Process(
-                            target=self._proccessor.run,
+                            target=self._processors[no].run,
                             name='Proc%s' % no,
                             daemon=True,
                             args=()))
@@ -265,9 +274,9 @@ def main(argv):
         print('Require minion root path as arguement')
         exit()
 
-    if not os.path.isdir(argv[1]):
-        print("Invalid minion root path '%s'" % argv[1])
-        exit()
+    path = os.path.abspath(argv[1])
+    if not os.path.isdir(path):
+        print("Invalid minion root path '%s'" % path)
 
     handlers = EntryPoints('tachyonic.minion.handlers')
     print("Handlers / EntryPoints")
@@ -276,7 +285,7 @@ def main(argv):
         print(" %s = %s" % (handler, handlers[handler], ))
         print("     %s" % handlers[handler].__description__)
         print("     Version: %s" % handlers[handler].__version__)
-    path = '/' + argv[1].strip('/')
+    path = '/' + path.strip('/')
     print("=" * 75)
 
     with Minion(path,
