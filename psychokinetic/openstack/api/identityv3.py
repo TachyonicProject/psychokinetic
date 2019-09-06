@@ -56,6 +56,7 @@ class IdentityV3(APIBase):
         self.client._login_token = self.client['X-Auth-Token'] = \
         _response.headers['x-subject-token']
 
+        return _response
 
     def scope(self, domain=None, project_id=None, project_name=None):
         """Changes scope on Openstack Identity
