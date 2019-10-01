@@ -2,3 +2,4 @@ luxon
 lark-parser==0.6.*
 enum34;python_version<="3.3"
 pika==1.1.0
+requests_oauthlib
