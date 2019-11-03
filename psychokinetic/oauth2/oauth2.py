@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018 Christiaan Frans Rademan.
+# Copyright (c) 2019 David Kruger.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,21 +27,36 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+from requests_oauthlib import OAuth2Session
+
 from luxon import g
 
-from psychokinetic.client import Client as APIClient
+from luxon.helpers.cache import cache
 
 
-class Client(object):
-    def pre(self, req, resp):
-        req.context.api = api = APIClient(
-            url=g.app.config.get('identity', 'url')
-        )
-        req.context.api.set_context(req.unscoped_token,
-                                    req.scoped_token,
-                                    req.context_domain,
-                                    req.context_tenant_id)
+class OAuth2(OAuth2Session):
+    """Restclient to use with OAuth2 BackendApplicationClient APIs.
 
-        req.context.api.collect_endpoints(req.context_region,
-                                          req.context_interface)
-        
+    """
+    def __init__(self, *args, section='oauth2', **kwargs):
+        token_url = kwargs['token_url'] if 'token_url' in kwargs else None
+        client_id = kwargs['client_id'] if 'client_id' in kwargs else None
+        client_secret = kwargs[
+            'client_secret'] if 'client_secret' in kwargs else None
+
+        token_url = g.app.config.get(section, 'token_url', fallback=token_url)
+        client_id = g.app.config.get(section, 'client_id', fallback=client_id)
+        client_secret = g.app.config.get(section, 'client_secret',
+                                         fallback=client_secret)
+
+        from oauthlib.oauth2 import BackendApplicationClient
+
+        self._backend_client = BackendApplicationClient(client_id=client_id)
+        kwargs['client'] = self._backend_client
+        self._oauth = OAuth2Session(*args, **kwargs)
+        kwargs['token'] = cache(3600, self._oauth.fetch_token,
+                                token_url=token_url,
+                                client_id=client_id,
+                                client_secret=client_secret)
+        kwargs['client_id'] = client_id
+        super().__init__(*args, **kwargs)

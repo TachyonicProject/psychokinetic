@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018 Christiaan Frans Rademan.
+# Copyright (c) 2019 Christiaan Frans Rademan.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,21 +27,44 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-from luxon import g
+from logging import getLogger
 
-from psychokinetic.client import Client as APIClient
+from luxon.helpers.elasticsearch import elasticsearch
+
+log = getLogger(__name__)
 
 
-class Client(object):
-    def pre(self, req, resp):
-        req.context.api = api = APIClient(
-            url=g.app.config.get('identity', 'url')
-        )
-        req.context.api.set_context(req.unscoped_token,
-                                    req.scoped_token,
-                                    req.context_domain,
-                                    req.context_tenant_id)
+class Elastic(object):
+    def __init__(self):
+        self._es = None
+        self._connect()
 
-        req.context.api.collect_endpoints(req.context_region,
-                                          req.context_interface)
-        
+    def _connect(self):
+        self._es = elasticsearch()
+
+    def bulk(self, body=None):
+        return self._es.bulk(body=body)
+
+    def create_index(self, index, shards=1, replicas=1, mapping=None):
+        body = {
+            "settings": {
+                "number_of_shards": shards,
+                "number_of_replicas": replicas,
+                "refresh_interval": '30s',
+            }
+        }
+        if mapping:
+            mapping = {
+                "mappings": {
+                    "properties": mapping
+                }
+            }
+            body = {**body, **mapping}
+        try:
+            self._es.indices.create(index=index, body=body, ignore=400)
+        except Exception as err:
+            log.critical(err)
+            return False
+
+    def index(self, index, body):
+        return self._es.index(index=index, body=body)

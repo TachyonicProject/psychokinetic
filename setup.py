@@ -30,12 +30,15 @@
 import os
 import sys
 
-if not sys.version_info >= (3, 6):
-    print('Requires python version 3.6 or higher')
+try:
+    from Cython.Build import cythonize
+    CYTHON = True
+except ImportError:
+    print('Requires `cython` to be installed')
+    print('`pip install cython`')
     exit()
 
 import glob
-from distutils import cmd
 from importlib.machinery import SourceFileLoader
 
 try:
@@ -104,6 +107,24 @@ def list_packages(package):
                                              top_dir).replace('/', '.')))
 
     return packages
+
+
+if CYTHON:
+    cython_packages = [
+        'psychokinetic.minion',
+    ]
+
+    extensions = [
+        Extension(
+            package + '.' + module,
+            [os.path.join(*(package.split('.') + [module + '.py']))]
+        )
+        for package in cython_packages
+        for module in list_modules(os.path.join(MYDIR, *package.split('.')))
+    ]
+else:
+    extensions = [
+    ]
 
 
 def read(filename):
@@ -181,7 +202,14 @@ setup_dict = dict(
     tests_require=install_requires + tests_requires,
     cmdclass=cmdclass,
     zip_safe=False,  # don't use eggs
-    python_requires='>=3.6'
+    python_requires='>=3.6',
+    ext_modules=cythonize(extensions,
+                          compiler_directives={'language_level': 3}),
+    entry_points={
+        'console_scripts': [
+            'minion = psychokinetic.minion.minion:entry_point'
+        ],
+    },
 )
 
 
