@@ -251,7 +251,7 @@ class Client(HTTPClient, ObjectStore):
 
         return response
 
-    def set_context(self, auth_token, scope_token, domain, tenant_id):
+    def set_context(self, auth_token, scoped_token, domain, tenant_id):
 
         if 'X-Domain' in self:
             del self['X-Domain']
@@ -262,8 +262,8 @@ class Client(HTTPClient, ObjectStore):
             self.auth_token = auth_token
             self['X-Auth-Token'] = self.auth_token
 
-        if scope_token is not None:
-            self['X-Auth-Token'] = scope_token
+        if scoped_token is not None:
+            self['X-Auth-Token'] = scoped_token
 
         if domain is not None:
             self['X-Domain'] = domain
@@ -279,7 +279,7 @@ class Client(HTTPClient, ObjectStore):
             del self['X-Domain']
         if 'X-Tenant-Id' in self:
             del self['X-Tenant-Id']
-        g.current_request.scope_token = None
+        g.current_request.scoped_token = None
 
     def new_endpoint(self, name, interface, region, uri):
         req = {}
