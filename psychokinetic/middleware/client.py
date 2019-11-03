@@ -37,8 +37,8 @@ class Client(object):
         req.context.api = api = APIClient(
             url=g.app.config.get('identity', 'url')
         )
-        req.context.api.set_context(req.user_token,
-                                    req.scope_token,
+        req.context.api.set_context(req.unscoped_token,
+                                    req.scoped_token,
                                     req.context_domain,
                                     req.context_tenant_id)
 
