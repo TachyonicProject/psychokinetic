@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018-2019 Christiaan Frans Rademan.
+# Copyright (c) 2018-2020 Christiaan Frans Rademan <chris@fwiw.co.za>.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,20 +29,10 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 import os
 import sys
-
-try:
-    from Cython.Build import cythonize
-    CYTHON = True
-except ImportError:
-    print('Requires `cython` to be installed')
-    print('`pip install cython`')
-    exit()
-
-import glob
 from importlib.machinery import SourceFileLoader
 
 try:
-    from setuptools import setup, Extension, find_packages
+    from setuptools import setup, find_packages
     from setuptools.command.test import test as TestCommand
 except ImportError:
     print('Requires `setuptools` to be installed')
@@ -80,51 +70,6 @@ def requirements(path):
             dependency = req.read().splitlines()
 
     return dependency
-
-
-def list_modules(path, ext='py'):
-    filenames = glob.glob(os.path.join(path, '*.%s' % ext))
-
-    module_names = []
-    for name in filenames:
-        module, ext = os.path.splitext(os.path.basename(name))
-        if module != '__init__':
-            module_names.append(module)
-
-    return module_names
-
-
-def list_packages(package):
-    path = os.path.join(MYDIR, package)
-    packages = []
-
-    scan_dir = os.path.join(path)
-    top_dir = "/" + "/".join(scan_dir.strip('/').split('/')[:-1])
-
-    for directory, directories, files in os.walk(scan_dir):
-        if '__init__.py' in files:
-            packages.append((os.path.relpath(directory,
-                                             top_dir).replace('/', '.')))
-
-    return packages
-
-
-if CYTHON:
-    cython_packages = [
-        'psychokinetic.minion',
-    ]
-
-    extensions = [
-        Extension(
-            package + '.' + module,
-            [os.path.join(*(package.split('.') + [module + '.py']))]
-        )
-        for package in cython_packages
-        for module in list_modules(os.path.join(MYDIR, *package.split('.')))
-    ]
-else:
-    extensions = [
-    ]
 
 
 def read(filename):
@@ -203,8 +148,6 @@ setup_dict = dict(
     cmdclass=cmdclass,
     zip_safe=False,  # don't use eggs
     python_requires='>=3.6',
-    ext_modules=cythonize(extensions,
-                          compiler_directives={'language_level': 3}),
     entry_points={
         'console_scripts': [
             'minion = psychokinetic.minion.minion:entry_point'
